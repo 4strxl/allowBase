@@ -1,0 +1,176 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AllowFriends"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game:GetService("CoreGui")
+
+-- 🟪 Container
+local container = Instance.new("Frame")
+container.Size = UDim2.fromOffset(140, 50)
+container.Position = UDim2.fromOffset(200, 220)
+container.BackgroundColor3 = Color3.fromRGB(0, 105, 148) -- 🌊 ocean blue
+container.BackgroundTransparency = 1
+container.BorderSizePixel = 0
+container.ClipsDescendants = true
+container.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = container
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(255, 255, 255) -- 🤍 white border
+stroke.Thickness = 1.5
+stroke.Transparency = 1
+stroke.Parent = container
+
+local scale = Instance.new("UIScale")
+scale.Scale = 0.85
+scale.Parent = container
+
+-- 🟣 Button
+local button = Instance.new("TextButton")
+button.Size = UDim2.fromScale(1, 1)
+button.BackgroundTransparency = 1
+button.Text = "a5trxl"
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.GothamBold
+button.TextSize = 18
+button.AutoButtonColor = false
+button.TextTransparency = 1
+button.Parent = container
+
+-- ✨ Glow effect
+local glow = Instance.new("UIStroke")
+glow.Color = Color3.fromRGB(135, 206, 250) -- light ocean glow
+glow.Thickness = 2
+glow.Transparency = 0.7
+glow.Parent = container
+
+-- 🌊 Splash sound
+local clickSound = Instance.new("Sound")
+clickSound.SoundId = "rbxassetid://9118826046" -- splash / liquid tap
+clickSound.Volume = 0.7
+clickSound.PlaybackSpeed = 1.05
+clickSound.Parent = container
+
+-- 🎬 Startup animation
+local tweenInfo = TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+
+TweenService:Create(container, tweenInfo, {
+	BackgroundTransparency = 0,
+	Position = UDim2.fromOffset(200, 200)
+}):Play()
+
+TweenService:Create(scale, tweenInfo, { Scale = 1 }):Play()
+TweenService:Create(stroke, tweenInfo, { Transparency = 0 }):Play()
+TweenService:Create(button, tweenInfo, { TextTransparency = 0 }):Play()
+
+-- 🌊 Ripple with gradient and glow pulse
+local function ripple(input)
+	local r = Instance.new("Frame")
+	r.Size = UDim2.fromScale(0, 0)
+	r.AnchorPoint = Vector2.new(0.5, 0.5)
+	r.Position = UDim2.fromOffset(
+		input.Position.X - container.AbsolutePosition.X,
+		input.Position.Y - container.AbsolutePosition.Y
+	)
+	r.BackgroundTransparency = 0
+	r.BorderSizePixel = 0
+	r.ClipsDescendants = true
+	r.Parent = container
+
+	local cornerR = Instance.new("UICorner")
+	cornerR.CornerRadius = UDim.new(1, 0)
+	cornerR.Parent = r
+
+	-- Gradient for ocean wave look
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(135, 206, 250)), -- light blue
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 168, 243)),  -- medium blue
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 105, 148))     -- deep blue
+	})
+	gradient.Rotation = 90
+	gradient.Parent = r
+
+	-- Glow pulse on container synced with ripple
+	local pulse = TweenService:Create(glow, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, true), { Transparency = 0.2 })
+	pulse:Play()
+
+	local maxSize = math.max(container.AbsoluteSize.X, container.AbsoluteSize.Y) * 1.6
+
+	local t = TweenService:Create(
+		r,
+		TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{
+			Size = UDim2.fromOffset(maxSize, maxSize),
+			BackgroundTransparency = 1
+		}
+	)
+
+	t:Play()
+	t.Completed:Connect(function()
+		r:Destroy()
+	end)
+end
+
+-- 🖱 Drag logic
+local dragging = false
+local dragStart, startPos
+
+button.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+
+		ripple(input)
+
+		dragging = true
+		dragStart = input.Position
+		startPos = container.Position
+	end
+end)
+
+button.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (
+		input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch
+	) then
+		local delta = input.Position - dragStart
+		container.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- 🔥 Click action with splash sound
+local function fire()
+	if clickSound.IsLoaded then
+		clickSound:Play()
+	else
+		clickSound.Loaded:Wait()
+		clickSound:Play()
+	end
+
+	game:GetService("ReplicatedStorage")
+		:WaitForChild("Packages")
+		:WaitForChild("Net")
+		:WaitForChild("RE/PlotService/ToggleFriends")
+		:FireServer()
+end
+
+button.MouseButton1Click:Connect(fire)
+button.TouchTap:Connect(fire)
