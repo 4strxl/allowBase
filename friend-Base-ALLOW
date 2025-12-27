@@ -7,12 +7,12 @@ screenGui.Name = "AllowFriends"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = game:GetService("CoreGui")
 
--- 🟪 Container (handles clipping)
+-- 🟪 Container (visible + animated)
 local container = Instance.new("Frame")
 container.Size = UDim2.fromOffset(140, 50)
-container.Position = UDim2.fromOffset(200, 220)
+container.Position = UDim2.fromOffset(200, 220) -- start lower
 container.BackgroundColor3 = Color3.fromRGB(18, 8, 30)
-container.BackgroundTransparency = 1
+container.BackgroundTransparency = 1 -- start invisible
 container.BorderSizePixel = 0
 container.ClipsDescendants = true
 container.Parent = screenGui
@@ -24,14 +24,14 @@ corner.Parent = container
 local stroke = Instance.new("UIStroke")
 stroke.Color = Color3.fromRGB(140, 90, 255)
 stroke.Thickness = 1.5
-stroke.Transparency = 1
+stroke.Transparency = 1 -- invisible first
 stroke.Parent = container
 
 local scale = Instance.new("UIScale")
-scale.Scale = 0.85
+scale.Scale = 0.85 -- start smaller
 scale.Parent = container
 
--- 🟣 Actual button
+-- 🟣 Button
 local button = Instance.new("TextButton")
 button.Size = UDim2.fromScale(1, 1)
 button.BackgroundTransparency = 1
@@ -40,20 +40,34 @@ button.TextColor3 = Color3.fromRGB(255, 255, 255)
 button.Font = Enum.Font.GothamBold
 button.TextSize = 18
 button.AutoButtonColor = false
+button.TextTransparency = 1 -- fade in
 button.Parent = container
 
--- 🎬 Startup animation
-local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+-- 🎬 STARTUP ANIMATION (FIXED)
+local tweenInfo = TweenInfo.new(
+	0.45,
+	Enum.EasingStyle.Quint,
+	Enum.EasingDirection.Out
+)
 
 TweenService:Create(container, tweenInfo, {
 	BackgroundTransparency = 0,
 	Position = UDim2.fromOffset(200, 200)
 }):Play()
 
-TweenService:Create(stroke, tweenInfo, { Transparency = 0.3 }):Play()
-TweenService:Create(scale, tweenInfo, { Scale = 1 }):Play()
+TweenService:Create(scale, tweenInfo, {
+	Scale = 1
+}):Play()
 
--- 🌊 PERFECT rounded ripple
+TweenService:Create(stroke, tweenInfo, {
+	Transparency = 0.3
+}):Play()
+
+TweenService:Create(button, tweenInfo, {
+	TextTransparency = 0
+}):Play()
+
+-- 🌊 Ripple (rounded + clipped)
 local function ripple(input)
 	local r = Instance.new("Frame")
 	r.BackgroundColor3 = Color3.fromRGB(170, 130, 255)
