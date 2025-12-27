@@ -11,7 +11,7 @@ screenGui.Parent = game:GetService("CoreGui")
 local container = Instance.new("Frame")
 container.Size = UDim2.fromOffset(140, 50)
 container.Position = UDim2.fromOffset(200, 220)
-container.BackgroundColor3 = Color3.fromRGB(18, 8, 30)
+container.BackgroundColor3 = Color3.fromRGB(0, 105, 148) -- 🌊 ocean blue
 container.BackgroundTransparency = 1
 container.BorderSizePixel = 0
 container.ClipsDescendants = true
@@ -22,7 +22,7 @@ corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = container
 
 local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(140, 90, 255)
+stroke.Color = Color3.fromRGB(255, 255, 255) -- 🤍 white border
 stroke.Thickness = 1.5
 stroke.Transparency = 1
 stroke.Parent = container
@@ -43,12 +43,19 @@ button.AutoButtonColor = false
 button.TextTransparency = 1
 button.Parent = container
 
+-- ✨ Glow effect
+local glow = Instance.new("UIStroke")
+glow.Color = Color3.fromRGB(135, 206, 250) -- light ocean glow
+glow.Thickness = 2
+glow.Transparency = 0.7
+glow.Parent = container
+
 -- 🌊 Splash sound
 local clickSound = Instance.new("Sound")
 clickSound.SoundId = "rbxassetid://9118826046" -- splash / liquid tap
 clickSound.Volume = 0.7
 clickSound.PlaybackSpeed = 1.05
-clickSound.Parent = button
+clickSound.Parent = container
 
 -- 🎬 Startup animation
 local tweenInfo = TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
@@ -59,25 +66,40 @@ TweenService:Create(container, tweenInfo, {
 }):Play()
 
 TweenService:Create(scale, tweenInfo, { Scale = 1 }):Play()
-TweenService:Create(stroke, tweenInfo, { Transparency = 0.3 }):Play()
+TweenService:Create(stroke, tweenInfo, { Transparency = 0 }):Play()
 TweenService:Create(button, tweenInfo, { TextTransparency = 0 }):Play()
 
--- 🌊 Ripple
+-- 🌊 Ripple with gradient and glow pulse
 local function ripple(input)
 	local r = Instance.new("Frame")
-	r.BackgroundColor3 = Color3.fromRGB(170, 130, 255)
-	r.BackgroundTransparency = 0.4
 	r.Size = UDim2.fromScale(0, 0)
 	r.AnchorPoint = Vector2.new(0.5, 0.5)
 	r.Position = UDim2.fromOffset(
 		input.Position.X - container.AbsolutePosition.X,
 		input.Position.Y - container.AbsolutePosition.Y
 	)
+	r.BackgroundTransparency = 0
+	r.BorderSizePixel = 0
+	r.ClipsDescendants = true
 	r.Parent = container
 
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(1, 0)
-	c.Parent = r
+	local cornerR = Instance.new("UICorner")
+	cornerR.CornerRadius = UDim.new(1, 0)
+	cornerR.Parent = r
+
+	-- Gradient for ocean wave look
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(135, 206, 250)), -- light blue
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 168, 243)),  -- medium blue
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 105, 148))     -- deep blue
+	})
+	gradient.Rotation = 90
+	gradient.Parent = r
+
+	-- Glow pulse on container synced with ripple
+	local pulse = TweenService:Create(glow, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, true), { Transparency = 0.2 })
+	pulse:Play()
 
 	local maxSize = math.max(container.AbsoluteSize.X, container.AbsoluteSize.Y) * 1.6
 
@@ -104,7 +126,6 @@ button.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1
 	or input.UserInputType == Enum.UserInputType.Touch then
 
-		clickSound:Play() -- 🌊 splash sound
 		ripple(input)
 
 		dragging = true
@@ -135,8 +156,15 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- 🔥 Click action
+-- 🔥 Click action with splash sound
 local function fire()
+	if clickSound.IsLoaded then
+		clickSound:Play()
+	else
+		clickSound.Loaded:Wait()
+		clickSound:Play()
+	end
+
 	game:GetService("ReplicatedStorage")
 		:WaitForChild("Packages")
 		:WaitForChild("Net")
